@@ -46,7 +46,10 @@ void inicializarJugador(int id , int numSocket);
 void* partidaCliente(void* socket);
 void inicializarEstructuras();
 void matrizABuffer(char mat[FIL][COL], char buffer[]);
+<<<<<<< HEAD
 int procesarCoords(char mat[FIL][COL], char coords[]);
+=======
+>>>>>>> f3a316293fc8b788f3f7d444c49a2b8980598d8b
 
 //Estructura del Protocolo
 /*typedef struct {
@@ -127,6 +130,8 @@ void* aceptarConexiones(void * puerto){
 	bzero(&con_address,sizeof(con_address));
 	con_addr_len = sizeof(struct sockaddr_in);
 
+	matrizABuffer(matriz,buffer);
+
 	//Aceptamos conexiones
 	while( 1 ){
 		usleep(50000);
@@ -135,8 +140,13 @@ void* aceptarConexiones(void * puerto){
 		pthread_mutex_lock( &mutex_acepto_conexiones );
 
 		if( acepto_conexiones ){
+<<<<<<< HEAD
 			//Envio Mensaje de Conexion exitosa al cliente
 			strncpy( buffer , "Te has conectado al servidor" , TAMBUF);
+=======
+			//Le enviamos esto al Cliente
+			//strncpy( buffer , "Te has conectado al servidor" , TAMBUF);
+>>>>>>> f3a316293fc8b788f3f7d444c49a2b8980598d8b
 			inicializarJugador(i , comm_socket); //guardamos los datos del jugador
 			//printf("Partida asignada al jugador: %d (%d).\n", i , info.clientes[i]);
 			pthread_t threadId;
@@ -273,8 +283,15 @@ int i, j, k=0;
 			k++;		
 		}
 	}
+<<<<<<< HEAD
 }
 
 int procesarCoords(char mat[FIL][COL], char coords[]) {
 	return (mat[coords[0]][coords[2]]==mat[coords[4]][6]);
+=======
+//printf("\n");
+	//Borrar despues, imprime protoclo con matriz hecha vector	
+//	for( i = 0 ; i < 100 ; i++)
+//		printf("%d", buffer[i]);
+>>>>>>> f3a316293fc8b788f3f7d444c49a2b8980598d8b
 }

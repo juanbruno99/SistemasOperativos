@@ -21,12 +21,26 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 #include <netdb.h>
+#include <ctype.h>
 
 #define TAMBUF 1024
+#define FIL 10
+#define COL 10
+
+//cosas nuevas a reubicar
+bool fin_partida = false;
+char matriz[FIL][COL]; //Matriz de pantalla de cliente
+int aciertos=0;
 
 //Prototipos de funciones
 void establecerConexionConElServidor(char *params[]);
 void cierreAnormal();
+int validarMovimiento(char movimientos[]);
+void bufferAMatriz(char mat[FIL][COL], char buffer[]);
+void printMatriz(char matriz[FIL][COL]);
+void enviarCoordenadas(char matriz[FIL][COL], char buffer[], char coords[]);
+int validarParametrosCliente(int argc, char *argv[]); 
+void inicializarMatriz(char matriz[FIL][COL]);
 
 unsigned short int comm_port = 0;
 unsigned long int comm_ip_address = 0;
@@ -38,11 +52,49 @@ char buffer[TAMBUF];
 
 //Main
 int main(int argc, char *argv[]) {
-establecerConexionConElServidor(argv);
 
-//Espero el mensaje de me conexion exitosa con el servidor
+//VALIDAR IP Y PUERTO RECIBIDO
+
+//conexion con el server
+establecerConexionConElServidor(argv);
+inicializarMatriz(matriz);
+//Espero el mensaje de me conexion exitosa con el servidor 
 recv( caller_socket , buffer, TAMBUF ,0);
 printf("\nMensaje de Server:%s\n", buffer);
+
+//vector que va a guardar las coordenadas ingresadas por el usuario
+char movimientos[7];
+int i;
+
+//Recibe y convierte buffer (protoclo), Imprime Matriz de juego recibida al iniciar la partida
+printf("MATRIZ DE JUEGO: ESCRIBA FIN PARA FINALIZAR\n");
+printMatriz(matriz);
+
+while(!fin_partida){
+	printf("Ingrese las coordenadas de las fichas a develar con el siguiente formato:\n");
+	printf("X1 Y1 X2 Y2\n");
+	gets(movimientos);
+	
+	//Valida coordenadas a develar ingresadas por el usuario
+	if(strcmp(movimientos,"FIN")!=0) {
+		while(!validarMovimiento(movimientos)){
+			fflush(stdin);
+			printf("Formato ingresado incorrecto, reingrese\n"); 
+			printf("X1 Y1 X2 Y2\n");
+			gets(movimientos);	
+		}
+	printMatriz(matriz);
+	enviarCoordenadas(matriz,buffer,movimientos);	
+	}
+	/* 
+	printf("resultado comparacion: %d \n",strcmp( buffer, "fin" ));
+	printf("mensaje buffeu: %s \n", buffer);*/
+	if(strcmp( movimientos, "FIN" ) == 0 || aciertos==50)
+		fin_partida = true;
+	//printf("\nMensaje de Server:%s\n", buffer);
+	//sleep(10); //PARA PROBAR
+}
+printf("*****************************SALISTE DE LA PARTIDA, CANTIDAD DE ACIERTOS:%d*****************************8\n", aciertos);
 exit(0);
 }
 
@@ -50,6 +102,7 @@ exit(0);
 
 void cierreAnormal()
 {
+	printf("Cierre Anormal\n");
 	close( caller_socket);
 	exit(1);
 }
@@ -57,7 +110,7 @@ void cierreAnormal()
 
 void establecerConexionConElServidor(char *params[])
 {
-	//Trato de obtener la IP segun el hostname que esta en el config_cliente.ini
+	//Obtengo direccion IP del server pasada por parametro
 	data_host=gethostbyname(params[1]);
 	comm_ip_address = inet_addr(params[1]);
 
@@ -68,9 +121,7 @@ void establecerConexionConElServidor(char *params[])
 	comm_address.sin_family = AF_INET;
 	comm_port = htons(atoi(params[2]));
 	comm_address.sin_port = comm_port;
-
 	comm_address.sin_addr.s_addr = comm_ip_address;
-
 	bzero(&(comm_address.sin_zero), 8);
 
 	//Nos conectamos al servidor
@@ -80,4 +131,94 @@ void establecerConexionConElServidor(char *params[])
 	}
 }
 
+int validarMovimiento(char movimientos[]) {
+int ok=1;
+
+	//Cantidad de entradas incorrecta, deben ser 7 incluyendo espacios
+	if(strlen(movimientos)>7) {
+		ok=0;
+	}
+	//Caracteres de coordenadas deben ser numericos y del 0 al 9, funcion isdigit C++
+	if(!(isdigit(movimientos[0]) && isdigit(movimientos[2]) && isdigit(movimientos[4]) && isdigit(movimientos[6])) ) {
+		ok=0;
+	}
+
+return ok;
+}
+
+//Por si hay que convertir matriz a develar recibida del server
+void bufferAMatriz(char mat[FIL][COL], char buffer[]) {
+int i, j, k=0;
+
+	for(i=0;i<FIL;i++) {
+		for(j=0;j<COL;j++) {
+			mat[i][j]=buffer[k];
+			k++;		
+		}
+	}
+}
+
+//Inicializa matriz con incognitas
+void inicializarMatriz(char matriz[FIL][COL]) {
+int i,j;
+
+	for(i=0;i<FIL;i++) {
+		for(j=0;j<COL;j++) {
+			matriz[i][j]='X';		
+		}
+
+//Para probar envio de coords ya develadas
+matriz[0][0]='1';
+matriz[1][1]='1';
+}
+
+}
+//Imprime matriz de incognitas
+void printMatriz(char matriz[FIL][COL]) {
+int i, j;
+
+	for(i=0;i<COL+1;i++)
+		printf("%d ", i);
+
+	printf("\n");
+
+	for(i=0;i<FIL;i++) {
+		for(j=0;j<COL;j++) {
+			printf("%c ", matriz[i][j]);		
+		}
+		printf(" %d", i);
+		printf("\n");
+	}	
+	
+}
+//Envia coordenadas a develar y recibe respuesta de acierto de server
+void enviarCoordenadas(char matriz[FIL][COL], char buffer[], char coords[]) {
+
+	//Comprueba que no se hayan develado las coordenadas a enviar ya
+	if(matriz[coords[0]][coords[2]]=='X' && matriz[coords[4]][coords[6]]=='X') {
+		strcpy(buffer,"\0");
+		strncpy( buffer ,coords , TAMBUF);
+	
+		if(send( caller_socket , buffer , TAMBUF , 0) < 0){
+		sprintf(stderr, "\nNo se pudo enviar el mensaje.\n");
+		return;
+		}
+
+		strcpy(buffer,"\0");
+		recv( caller_socket , buffer, TAMBUF ,0);
+
+		//Si hay acierto modifica coordenadas acertadas en matriz cliente - FALTA
+		
+	}
+	else
+	{
+	printf("COORDENADAS INGRESADAS YA DEVELADAS, REINGRESE\n");
+	}
+}
+
+
+//Valida Parametros de ejecucion de programa cliente
+int validarParametrosCliente(int argc, char *argv[]) {
+
+}
 

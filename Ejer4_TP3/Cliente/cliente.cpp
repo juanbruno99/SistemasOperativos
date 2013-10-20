@@ -30,17 +30,24 @@
 //cosas nuevas a reubicar
 bool fin_partida = false;
 char matriz[FIL][COL]; //Matriz de pantalla de cliente
+<<<<<<< HEAD
 int aciertos=0;
+=======
+>>>>>>> f3a316293fc8b788f3f7d444c49a2b8980598d8b
 
 //Prototipos de funciones
 void establecerConexionConElServidor(char *params[]);
 void cierreAnormal();
 int validarMovimiento(char movimientos[]);
 void bufferAMatriz(char mat[FIL][COL], char buffer[]);
+<<<<<<< HEAD
 void printMatriz(char matriz[FIL][COL]);
 void enviarCoordenadas(char matriz[FIL][COL], char buffer[], char coords[]);
 int validarParametrosCliente(int argc, char *argv[]); 
 void inicializarMatriz(char matriz[FIL][COL]);
+=======
+void printMatriz(char matriz[FIL][COL]); 
+>>>>>>> f3a316293fc8b788f3f7d444c49a2b8980598d8b
 
 unsigned short int comm_port = 0;
 unsigned long int comm_ip_address = 0;
@@ -57,6 +64,7 @@ int main(int argc, char *argv[]) {
 
 //conexion con el server
 establecerConexionConElServidor(argv);
+<<<<<<< HEAD
 inicializarMatriz(matriz);
 //Espero el mensaje de me conexion exitosa con el servidor 
 recv( caller_socket , buffer, TAMBUF ,0);
@@ -69,6 +77,38 @@ int i;
 //Recibe y convierte buffer (protoclo), Imprime Matriz de juego recibida al iniciar la partida
 printf("MATRIZ DE JUEGO: ESCRIBA FIN PARA FINALIZAR\n");
 printMatriz(matriz);
+=======
+
+//Espero el mensaje de me conexion exitosa con el servidor - Recibe Matriz inicial de juego de server
+recv( caller_socket , buffer, TAMBUF ,0); //Y la matriz inicial
+//printf("\nMensaje de Server:%s\n", buffer);
+
+//vector que va a guardar las coordenadas ingresadas por el usuario
+ char movimientos[25];
+  int i;
+ 
+//Recibe y convierte buffer (protoclo), Imprime Matriz de juego recibida al iniciar la partida
+bufferAMatriz(matriz, buffer);
+printf("MATRIZ DE JUEGO:\n");
+printMatriz(matriz);
+
+while(!fin_partida){
+	printf("Ingrese las coordenadas de las fichas a develar con el siguiente formato:\n");
+	printf("X1 Y1 X2 Y2\n");
+	gets(movimientos);
+	//VALIDACION DE LAS COORDENADAS INGRESADAS POR EL USUARIO
+	while(!validarMovimiento(movimientos)){
+		fflush(stdin);
+		printf("Formato ingresado incorrecto, reingrese\n"); 
+		printf("X1 Y1 X2 Y2\n");
+		gets(movimientos);	
+	}
+	//strcpy(buffer,"\0");
+	//strncpy( buffer ,movimientos , TAMBUF);
+	//if(send( caller_socket , buffer , TAMBUF , 0) < 0){
+	//	printf("\nNo se pudo enviar el mensaje.\n");
+	//}
+>>>>>>> f3a316293fc8b788f3f7d444c49a2b8980598d8b
 
 while(!fin_partida){
 	printf("Ingrese las coordenadas de las fichas a develar con el siguiente formato:\n");
@@ -136,6 +176,7 @@ int ok=1;
 
 	//Cantidad de entradas incorrecta, deben ser 7 incluyendo espacios
 	if(strlen(movimientos)>7) {
+<<<<<<< HEAD
 		ok=0;
 	}
 	//Caracteres de coordenadas deben ser numericos y del 0 al 9, funcion isdigit C++
@@ -221,4 +262,38 @@ void enviarCoordenadas(char matriz[FIL][COL], char buffer[], char coords[]) {
 int validarParametrosCliente(int argc, char *argv[]) {
 
 }
+=======
+	ok=0;
+	}
+	//Caracteres de coordenadas deben ser numericos y del 0 al 9, funcion isdigit C++
+	if(!(isdigit(movimientos[0]) && isdigit(movimientos[2]) && isdigit(movimientos[4]) && isdigit(movimientos[6])) ) {
+	ok=0;
+	}
+	
+return ok;
+}
 
+void bufferAMatriz(char mat[FIL][COL], char buffer[]) {
+int i, j, k=0;
+>>>>>>> f3a316293fc8b788f3f7d444c49a2b8980598d8b
+
+	for(i=0;i<FIL;i++) {
+		for(j=0;j<COL;j++) {
+			mat[i][j]=buffer[k];
+			k++;		
+		}
+	}
+}
+
+
+void printMatriz(char matriz[FIL][COL]) {
+int i, j;
+
+	for(i=0;i<FIL;i++) {
+		for(j=0;j<COL;j++) {
+			printf("  %d", matriz[i][j]);		
+		}
+		printf("\n");
+	}	
+	
+}
